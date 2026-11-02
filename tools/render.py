@@ -4,7 +4,7 @@ Usage : python3 tools/render.py spec.json [dossier_sortie]
 Prérequis : cd tools && npm install @fontsource/bricolage-grotesque @fontsource/dm-sans ; pip install playwright pillow
 Spec : {"name":"post-08","type":"carousel"|"image","photo":"ruelle",
  "cover":{"label":"..","l1":"..","l2":"..","size":150},   # carrousel : couverture (photo plein cadre)
- "slides":[{"kind":"creme|dark|bord","label":"..","h":"..","sub":".."}],  # slides 2..N-1 ; la dernière (signature) est ajoutée automatiquement
+ "slides":[{"kind":"creme|dark|bord","label":"..","h":"..","sub":".."} ou {"kind":"photo","photo":"nom","label":"..","h":"..","sub":"..","pos":".."}],  # slides 2..N-1 ; la dernière (signature) est ajoutée automatiquement
  "recap":["..",".."],   # optionnel : slide 'À retenir' avant la signature
  "image":{"l1":"..","l2":"..","pos":"center 25%"}}    # image seule : photo plein cadre + 2 lignes
 Les photos sont dans photos/<nom>.jpg. Sortie : slideN.jpg (carrousel) ou image.jpg, en 1080x1350."""
@@ -39,11 +39,15 @@ def cover(ph,c):
 def image(ph,i):
     s=i.get("size",104)
     return f"<div class=s><img src='file://{ROOT}/photos/{ph}.jpg' style='object-position:{i.get('pos','center 25%')}'><div class=g style='background:linear-gradient(180deg,rgba(42,11,20,0) 40%,rgba(42,11,20,.9) 100%)'></div><div class=t style='justify-content:flex-end;padding-bottom:170px'><b style='font-size:{s}px;color:{CREME}'>{i['l1']}</b><b style='font-size:{s}px;color:{CHAMP}'>{i['l2']}</b></div><div class=foot style='color:{CHAMP}'><span>WIHEM · MULTIPOTENTIELLE</span></div></div>"
+def photoslide(ph,x,n,N):
+    return f"<div class=s><img src='file://{ROOT}/photos/{ph}.jpg' style='object-position:{x.get('pos','center 30%')}'><div class=g style='background:linear-gradient(180deg,rgba(42,11,20,.45) 0%,rgba(42,11,20,0) 25%,rgba(42,11,20,.5) 55%,rgba(42,11,20,.95) 100%)'></div><div class=lab style='color:{CHAMP}'>{x['label']}</div><div class=t style='justify-content:flex-end;padding-bottom:170px'><b style='font-size:84px;color:{CHAMP}'>{x['h']}</b><span style='font-size:48px;margin-top:30px;color:{CREME}'>{x['sub']}</span></div><div class=foot style='color:{CHAMP}'><span>WIHEM · MULTIPOTENTIELLE</span><span>{n}/{N}</span></div></div>"
 def build(spec):
     if spec["type"]=="image": return [image(spec["photo"],spec["image"])]
     sl=spec["slides"]; rec=spec.get("recap"); N=len(sl)+2+(1 if rec else 0)
     out=[cover(spec["photo"],spec["cover"])]
     for i,x in enumerate(sl,2):
+        if x["kind"]=="photo":
+            out.append(photoslide(x["photo"],x,i,N)); continue
         c=BORD if x["kind"]=="creme" else CHAMP
         out.append(S(x["kind"],x["label"],big(x["h"],96,c)+sm(x["sub"],56,50),i,N))
     n=len(out)+1
